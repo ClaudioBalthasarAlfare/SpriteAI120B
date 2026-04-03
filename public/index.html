@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpriteAI — Upload .zip</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 2.5rem;
+      width: min(440px, 90vw);
+      box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+    }
+    h1 { margin: 0 0 0.5rem; font-size: 1.6rem; }
+    p.subtitle { margin: 0 0 1.8rem; color: #94a3b8; font-size: 0.9rem; }
+    label.drop-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      border: 2px dashed #475569;
+      border-radius: 8px;
+      padding: 2rem;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    label.drop-zone:hover, label.drop-zone.active {
+      border-color: #6366f1;
+      background: rgba(99,102,241,0.08);
+    }
+    label.drop-zone .icon { font-size: 2.4rem; }
+    label.drop-zone .hint { color: #94a3b8; font-size: 0.85rem; }
+    #fileInput { display: none; }
+    #fileName { margin-top: 0.8rem; font-size: 0.85rem; color: #6366f1; min-height: 1.2em; }
+    button[type="submit"] {
+      margin-top: 1.5rem;
+      width: 100%;
+      padding: 0.75rem;
+      background: #6366f1;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button[type="submit"]:hover { background: #4f46e5; }
+    button[type="submit"]:disabled { background: #475569; cursor: not-allowed; }
+    #status {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      display: none;
+    }
+    #status.success { background: #14532d; color: #86efac; display: block; }
+    #status.error   { background: #450a0a; color: #fca5a5; display: block; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🗜️ SpriteAI</h1>
+    <p class="subtitle">Upload a <code>.zip</code> archive of your sprite assets.</p>
+
+    <form id="uploadForm">
+      <label class="drop-zone" id="dropZone" for="fileInput">
+        <span class="icon">📁</span>
+        <span>Drag &amp; drop or click to browse</span>
+        <span class="hint">Accepts .zip files only</span>
+      </label>
+      <input type="file" id="fileInput" name="zipfile" accept=".zip" />
+      <div id="fileName"></div>
+      <button type="submit" id="submitBtn" disabled>Upload</button>
+    </form>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const fileNameEl = document.getElementById('fileName');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusEl = document.getElementById('status');
+
+    let selectedFile = null;
+
+    function setFile(file) {
+      if (!file) return;
+      selectedFile = file;
+      fileNameEl.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      submitBtn.disabled = false;
+      statusEl.className = '';
+      statusEl.style.display = 'none';
+    }
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) setFile(fileInput.files[0]);
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('active');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('active');
+      const file = e.dataTransfer.files[0];
+      if (file) setFile(file);
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = selectedFile || fileInput.files[0];
+      if (!file) return;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Uploading…';
+      statusEl.className = '';
+      statusEl.style.display = 'none';
+
+      const formData = new FormData();
+      formData.append('zipfile', file);
+
+      try {
+        const res = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (res.ok) {
+          statusEl.textContent = `✅ ${data.message} (${data.originalname})`;
+          statusEl.className = 'success';
+        } else {
+          statusEl.textContent = `❌ ${data.error}`;
+          statusEl.className = 'error';
+        }
+      } catch (err) {
+        statusEl.textContent = `❌ Network error: ${err.message}`;
+        statusEl.className = 'error';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload';
+      }
+    });
+  </script>
+</body>
+</html>
