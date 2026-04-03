@@ -1,0 +1,13 @@
+{
+  "name": "spriteai120b",
+  "version": "1.0.0",
+  "description": "A web application for uploading .zip files",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "multer": "^2.1.1"
+  }
+}
