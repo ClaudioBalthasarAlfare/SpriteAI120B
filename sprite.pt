@@ -1,0 +1,7 @@
+{
+  "R": 1.0,
+  "f": 442,
+  "state": "stable",
+  "model": "sprite_tensor_core",
+  "audio_mode": "coherent_enhancement"
+}
